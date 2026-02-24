@@ -1,0 +1,94 @@
+/* Reset */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  
+}
+
+/* Main App Container */
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(to right, #0f172a, #020617);
+  color: white;
+}
+
+/* Page Wrapper */
+.page-content {
+  padding-top: 100px;
+}
+
+/* Hero Section */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.hero-sub {
+  font-size: 18px;
+  margin-bottom: 40px;
+  opacity: 0.8;
+}
+
+/* Input Section */
+.input-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.input-group input {
+  padding: 12px;
+  width: 400px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+.input-group button {
+  padding: 12px 20px;
+  background: #ef4444;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.input-group button:hover {
+  background: #dc2626;
+}
+
+/* Course Result */
+.course-result {
+  margin-top: 40px;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 10px;
+  width: 60%;
+  
+}
+/* Dark Theme Container */
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(to right, #0f172a, #020617);
+  color: white;
+}
+
+/* Force all text inside app to white */
+.app-container * {
+  color: white !important;
+}
+
+/* Fix Bootstrap muted text */
+.text-muted {
+  color: #cbd5e1 !important;
+}
