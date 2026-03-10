@@ -3,91 +3,95 @@ import { useNavigate } from "react-router-dom"
 
 function Home() {
   const [topic, setTopic] = useState("")
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const currentUser = localStorage.getItem("currentUser")
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
 
-  // 🔥 Fixed Popular Courses
   const popularCourses = [
     { id: 1, title: "Python" },
     { id: 2, title: "Java" },
     { id: 3, title: "React" },
   ]
 
-  // ✅ Generate Custom Course
-  const handleGenerate = () => {
+  const saveCourseAndOpen = (courseData, fallbackTitle) => {
+    const newCourse = {
+      id: Date.now(),
+      title: courseData.title || fallbackTitle,
+      modules: courseData.modules || [],
+      mcq: courseData.mcq || [],
+      assignment: courseData.assignment || {},
+      youtube: courseData.youtube || [],
+      articles: courseData.articles || [],
+      progress: {
+        notesCompleted: false,
+        videosCompleted: false,
+        assessmentCompleted: false,
+        codingCompleted: false,
+        articlesCompleted: false,
+        assessmentScore: 0,
+        codingScore: 0
+      }
+    }
+
+    const userCourses =
+      JSON.parse(localStorage.getItem(currentUser + "_courses")) || []
+
+    const updatedCourses = [...userCourses, newCourse]
+
+    localStorage.setItem(
+      currentUser + "_courses",
+      JSON.stringify(updatedCourses)
+    )
+
+    navigate(`/course/${newCourse.id}`)
+  }
+
+  const handleGenerate = async (selectedTopic = topic) => {
     if (!isLoggedIn) {
       alert("Please login to generate course")
       navigate("/login")
       return
     }
 
-    if (!topic.trim()) {
+    if (!selectedTopic.trim()) {
       alert("Enter a topic")
       return
     }
 
-    const newCourse = {
-      id: Date.now(),
-      title: topic,
-      notes: [
-        `Introduction to ${topic}`,
-        `${topic} Core Concepts`,
-        `Intermediate ${topic}`,
-        `Advanced ${topic}`,
-        `${topic} Real World Project`
-      ]
+    try {
+      setLoading(true)
+
+      const res = await fetch("http://127.0.0.1:5000/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ topic: selectedTopic })
+      })
+
+      const data = await res.json()
+      console.log("API RESPONSE:", data)
+
+      if (data.error) {
+        alert("Backend error generating course")
+        return
+      }
+
+      const courseData = data.course
+      saveCourseAndOpen(courseData, selectedTopic)
+      setTopic("")
+    } catch (error) {
+      console.error("API ERROR:", error)
+      alert("Error creating course")
+    } finally {
+      setLoading(false)
     }
-
-    const userCourses =
-      JSON.parse(localStorage.getItem(currentUser + "_courses")) || []
-
-    const updatedUserCourses = [...userCourses, newCourse]
-
-    localStorage.setItem(
-      currentUser + "_courses",
-      JSON.stringify(updatedUserCourses)
-    )
-
-    setTopic("")
-
-    // 🔥 Open course immediately
-    navigate(`/course/${newCourse.id}`)
   }
 
-  // ✅ Popular Course Click
   const handlePopularClick = (title) => {
-    if (!isLoggedIn) {
-      alert("Please login to view course")
-      navigate("/login")
-      return
-    }
-
-    const newCourse = {
-      id: Date.now(),
-      title: title,
-      notes: [
-        `Introduction to ${title}`,
-        `${title} Core Concepts`,
-        `Intermediate ${title}`,
-        `Advanced ${title}`,
-        `${title} Real World Project`
-      ]
-    }
-
-    const userCourses =
-      JSON.parse(localStorage.getItem(currentUser + "_courses")) || []
-
-    const updatedUserCourses = [...userCourses, newCourse]
-
-    localStorage.setItem(
-      currentUser + "_courses",
-      JSON.stringify(updatedUserCourses)
-    )
-
-    // 🔥 Open the course immediately
-    navigate(`/course/${newCourse.id}`)
+    handleGenerate(title)
   }
 
   return (
@@ -100,7 +104,6 @@ function Home() {
         Generate complete learning paths instantly using AI
       </p>
 
-      {/* Generate Section */}
       <div className="d-flex justify-content-center gap-2 mb-5">
         <input
           type="text"
@@ -112,24 +115,21 @@ function Home() {
 
         <button
           className="btn btn-danger"
-          onClick={handleGenerate}
+          onClick={() => handleGenerate(topic)}
+          disabled={loading}
         >
-          Generate Course
+          {loading ? "Generating..." : "Generate Course"}
         </button>
       </div>
 
-      {/* 🔥 Fixed Popular Courses */}
-      <h3 className="mb-4 text-danger"> Popular Courses</h3>
+      <h3 className="mb-4 text-danger">Popular Courses</h3>
 
       <div className="row justify-content-center">
         {popularCourses.map((course) => (
-          <div
-            key={course.id}
-            className="col-md-3 mb-3"
-          >
+          <div key={course.id} className="col-md-3 mb-3">
             <div
               className="card bg-dark text-light p-3 shadow"
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", borderRadius: "16px" }}
               onClick={() => handlePopularClick(course.title)}
             >
               <h5>📘 {course.title}</h5>

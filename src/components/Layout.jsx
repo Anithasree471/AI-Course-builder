@@ -1,31 +1,29 @@
-import { useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
+import { useEffect, useState } from "react"
 
 function Layout({ children }) {
   const navigate = useNavigate()
+  const location = useLocation()
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUser, setCurrentUser] = useState("")
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    localStorage.getItem("isLoggedIn") === "true"
+  )
+  const [currentUser, setCurrentUser] = useState(
+    localStorage.getItem("currentUser")
+  )
   const [showMenu, setShowMenu] = useState(false)
 
-  // Check login status whenever component loads
   useEffect(() => {
-    const loginStatus = localStorage.getItem("isLoggedIn") === "true"
-    const user = localStorage.getItem("currentUser")
-
-    setIsLoggedIn(loginStatus)
-    setCurrentUser(user)
-  }, [])
+    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true")
+    setCurrentUser(localStorage.getItem("currentUser"))
+  }, [location])
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn")
     localStorage.removeItem("currentUser")
-
     setIsLoggedIn(false)
-    setCurrentUser("")
-    setShowMenu(false)
-
-    navigate("/") // go to home
+    setCurrentUser(null)
+    navigate("/")
   }
 
   return (
@@ -39,7 +37,6 @@ function Layout({ children }) {
           AI Course Builder
         </h4>
 
-        {/* RIGHT SIDE */}
         {!isLoggedIn ? (
           <div>
             <button
@@ -57,7 +54,6 @@ function Layout({ children }) {
           </div>
         ) : (
           <div className="position-relative">
-            {/* Profile Circle */}
             <div
               onClick={() => setShowMenu(!showMenu)}
               style={{
@@ -76,18 +72,14 @@ function Layout({ children }) {
               {currentUser?.charAt(0).toUpperCase()}
             </div>
 
-            {/* Dropdown Menu */}
             {showMenu && (
               <div
-                className="bg-dark text-light p-3 position-absolute rounded shadow"
-                style={{ right: 0, top: "50px", width: "200px", zIndex: 1000 }}
+                className="bg-dark text-light p-3 position-absolute shadow"
+                style={{ right: 0, top: "50px", width: "200px", borderRadius: "12px" }}
               >
                 <button
                   className="btn btn-sm btn-outline-light w-100 mb-2"
-                  onClick={() => {
-                    navigate("/profile")
-                    setShowMenu(false)
-                  }}
+                  onClick={() => navigate("/profile")}
                 >
                   My Courses
                 </button>
