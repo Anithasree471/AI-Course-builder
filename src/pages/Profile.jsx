@@ -3,44 +3,70 @@ import { useNavigate } from "react-router-dom"
 
 function Profile() {
   const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  const currentUser = localStorage.getItem("currentUser")
+  const userId = localStorage.getItem("user_id")
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       navigate("/login")
       return
     }
 
-    const storedCourses =
-      JSON.parse(localStorage.getItem(currentUser + "_courses")) || []
+    fetchCourses()
+  }, [userId, navigate])
 
-    setCourses(storedCourses)
-  }, [currentUser, navigate])
+  const fetchCourses = async () => {
+    try {
+      setLoading(true)
 
-  const handleDelete = (id) => {
-    const updatedCourses = courses.filter(
-      (course) => course.id !== id
-    )
+      const res = await fetch(`http://127.0.0.1:5000/courses/${userId}`)
+      const data = await res.json()
 
-    setCourses(updatedCourses)
+      if (!res.ok) {
+        alert(data.error || "Failed to fetch courses")
+        return
+      }
 
-    localStorage.setItem(
-      currentUser + "_courses",
-      JSON.stringify(updatedCourses)
-    )
+      setCourses(data.courses || [])
+    } catch (error) {
+      console.error("FETCH COURSES ERROR:", error)
+      alert("Error loading courses")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/course/${id}`, {
+        method: "DELETE"
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || "Failed to delete course")
+        return
+      }
+
+      setCourses((prev) => prev.filter((course) => course.id !== id))
+    } catch (error) {
+      console.error("DELETE COURSE ERROR:", error)
+      alert("Error deleting course")
+    }
   }
 
   const getProgressPercent = (course) => {
     const progress = course.progress || {}
-    const total = 5
-    let completed = 0
+    const total = course.isProgramming ? 5 : 4
 
+    let completed = 0
     if (progress.notesCompleted) completed++
     if (progress.videosCompleted) completed++
     if (progress.assessmentCompleted) completed++
-    if (progress.codingCompleted) completed++
+    if (course.isProgramming && progress.codingCompleted) completed++
     if (progress.articlesCompleted) completed++
 
     return Math.round((completed / total) * 100)
@@ -48,18 +74,26 @@ function Profile() {
 
   return (
     <div className="container mt-5 text-light">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h2 className="mb-0">My Courses</h2>
 
         <button
-          className="btn btn-outline-light"
+          className="btn text-light"
           onClick={() => navigate("/")}
+          style={{
+            background: "transparent",
+            border: "none",
+            fontSize: "1rem",
+            fontWeight: "500"
+          }}
         >
-          ← Back to Home
+          ← Back
         </button>
       </div>
 
-      {courses.length === 0 ? (
+      {loading ? (
+        <p className="text-center">Loading courses...</p>
+      ) : courses.length === 0 ? (
         <p className="text-center">No courses generated yet.</p>
       ) : (
         <div className="row">
@@ -73,12 +107,24 @@ function Profile() {
                   style={{ borderRadius: "16px" }}
                 >
                   <div className="d-flex justify-content-between align-items-start mb-3">
-                    <h4
-                      style={{ cursor: "pointer" }}
-                      onClick={() => navigate(`/course/${course.id}`)}
-                    >
-                      📘 {course.title}
-                    </h4>
+                    <div>
+                      <h4
+                        className="fw-bold mb-1"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => navigate(`/course/${course.id}`)}
+                      >
+                        {course.title}
+                      </h4>
+                      <p
+                        className="mb-0"
+                        style={{
+                          color: "rgba(255,255,255,0.6)",
+                          fontSize: "0.95rem"
+                        }}
+                      >
+                        AI-generated learning path
+                      </p>
+                    </div>
 
                     <button
                       className="btn btn-sm btn-danger"

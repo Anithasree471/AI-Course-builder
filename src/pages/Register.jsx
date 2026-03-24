@@ -1,40 +1,42 @@
 import { useState } from "react"
-
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 function Register() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const navigate = useNavigate()
 
-  const handleRegister = (e) => {
-  e.preventDefault()
+  const handleRegister = async (e) => {
+    e.preventDefault()
 
-  const newUser = { name, email, password }
+    try {
+      const res = await fetch("http://127.0.0.1:5000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password
+        })
+      })
 
-  const existingUsers =
-    JSON.parse(localStorage.getItem("users")) || []
+      const data = await res.json()
 
-  // Check if user already exists
-  const userExists = existingUsers.find(
-    (u) => u.email === email
-  )
+      if (!res.ok) {
+        alert(data.error || "Registration failed")
+        return
+      }
 
-  if (userExists) {
-    alert("User already exists!")
-    return
+      alert("Registration Successful!")
+      navigate("/login")
+    } catch (error) {
+      console.error("REGISTER ERROR:", error)
+      alert("Server error")
+    }
   }
-
-  existingUsers.push(newUser)
-
-  localStorage.setItem(
-    "users",
-    JSON.stringify(existingUsers)
-  )
-
-  alert("Registration Successful!")
-  window.location.href = "/login"
-}
 
   return (
     <div className="container mt-5">
@@ -47,6 +49,7 @@ function Register() {
             className="form-control mb-3"
             placeholder="Full Name"
             required
+            value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
@@ -55,6 +58,7 @@ function Register() {
             className="form-control mb-3"
             placeholder="Email"
             required
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
@@ -63,6 +67,7 @@ function Register() {
             className="form-control mb-3"
             placeholder="Password"
             required
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 

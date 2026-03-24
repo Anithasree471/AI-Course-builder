@@ -9,52 +9,83 @@ function CourseView() {
   const [selectedAnswers, setSelectedAnswers] = useState({})
   const [score, setScore] = useState(null)
   const [codeAnswer, setCodeAnswer] = useState("")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    const storedCourses =
-      JSON.parse(localStorage.getItem(currentUser + "_courses")) || []
-
-    const selectedCourse = storedCourses.find(
-      (c) => c.id.toString() === id
-    )
-
-    setCourse(selectedCourse)
+    fetchCourse()
   }, [id])
 
-  const saveCourse = (updatedCourse) => {
-    const currentUser = localStorage.getItem("currentUser")
-    const storedCourses =
-      JSON.parse(localStorage.getItem(currentUser + "_courses")) || []
+  const fetchCourse = async () => {
+    try {
+      setLoading(true)
 
-    const updatedCourses = storedCourses.map((c) =>
-      c.id.toString() === id ? updatedCourse : c
-    )
+      const res = await fetch(`http://127.0.0.1:5000/course/${id}`)
+      const data = await res.json()
 
-    localStorage.setItem(
-      currentUser + "_courses",
-      JSON.stringify(updatedCourses)
-    )
+      if (!res.ok) {
+        alert(data.error || "Failed to fetch course")
+        setCourse(null)
+        return
+      }
 
-    setCourse(updatedCourse)
+      setCourse(data.course)
+    } catch (error) {
+      console.error("FETCH COURSE ERROR:", error)
+      alert("Error loading course")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveProgress = async (updatedProgress) => {
+    if (!course) return
+
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/course/${id}/progress`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          progress: updatedProgress
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || "Failed to update progress")
+        return
+      }
+
+      setCourse({
+        ...course,
+        progress: updatedProgress
+      })
+    } catch (error) {
+      console.error("UPDATE PROGRESS ERROR:", error)
+      alert("Error updating progress")
+    }
   }
 
   const markComplete = (field) => {
     if (!course) return
 
-    const updatedCourse = {
-      ...course,
-      progress: {
-        ...course.progress,
-        [field]: true
-      }
+    const updatedProgress = {
+      ...course.progress,
+      [field]: true
     }
 
-    saveCourse(updatedCourse)
+    saveProgress(updatedProgress)
   }
 
+  const isProgramming = course?.isProgramming === true
+
   const goNext = () => {
-    const order = ["notes", "videos", "assessment", "coding", "articles", "dashboard"]
+    const order = isProgramming
+      ? ["notes", "videos", "assessment", "coding", "articles", "dashboard"]
+      : ["notes", "videos", "assessment", "articles", "dashboard"]
+
     const currentIndex = order.indexOf(activeTab)
     if (currentIndex < order.length - 1) {
       setActiveTab(order[currentIndex + 1])
@@ -81,16 +112,13 @@ function CourseView() {
 
     const percent = Math.round((marks / course.mcq.length) * 100)
 
-    const updatedCourse = {
-      ...course,
-      progress: {
-        ...course.progress,
-        assessmentCompleted: true,
-        assessmentScore: percent
-      }
+    const updatedProgress = {
+      ...course.progress,
+      assessmentCompleted: true,
+      assessmentScore: percent
     }
 
-    saveCourse(updatedCourse)
+    saveProgress(updatedProgress)
     setScore(`${marks} / ${course.mcq.length}`)
   }
 
@@ -113,16 +141,13 @@ function CourseView() {
     }
     if (codeAnswer.length > 100) codingScore += 5
 
-    const updatedCourse = {
-      ...course,
-      progress: {
-        ...course.progress,
-        codingCompleted: true,
-        codingScore
-      }
+    const updatedProgress = {
+      ...course.progress,
+      codingCompleted: true,
+      codingScore
     }
 
-    saveCourse(updatedCourse)
+    saveProgress(updatedProgress)
     alert("Code submitted successfully")
   }
 
@@ -196,6 +221,14 @@ function CourseView() {
     })
   }
 
+  if (loading) {
+    return (
+      <p className="text-center mt-5 text-light">
+        Loading course...
+      </p>
+    )
+  }
+
   if (!course) {
     return (
       <p className="text-center mt-5 text-light">
@@ -210,18 +243,32 @@ function CourseView() {
     { label: "Notes", completed: progress.notesCompleted },
     { label: "Videos", completed: progress.videosCompleted },
     { label: "Assessment", completed: progress.assessmentCompleted },
-    { label: "Coding", completed: progress.codingCompleted },
+    ...(isProgramming
+      ? [{ label: "Coding", completed: progress.codingCompleted }]
+      : []),
     { label: "Articles", completed: progress.articlesCompleted }
   ]
 
   const completedCount = checklistItems.filter((item) => item.completed).length
   const progressPercent = Math.round((completedCount / checklistItems.length) * 100)
 
-  const notesScore = progress.notesCompleted ? 20 : 0
-  const videosScore = progress.videosCompleted ? 20 : 0
-  const articlesScore = progress.articlesCompleted ? 20 : 0
-  const assessmentScore = Math.round(((progress.assessmentScore || 0) / 100) * 20)
-  const codingScore = progress.codingScore || 0
+  const notesScore = isProgramming
+    ? (progress.notesCompleted ? 20 : 0)
+    : (progress.notesCompleted ? 25 : 0)
+
+  const videosScore = isProgramming
+    ? (progress.videosCompleted ? 20 : 0)
+    : (progress.videosCompleted ? 25 : 0)
+
+  const assessmentScore = isProgramming
+    ? Math.round(((progress.assessmentScore || 0) / 100) * 20)
+    : Math.round(((progress.assessmentScore || 0) / 100) * 25)
+
+  const codingScore = isProgramming ? (progress.codingScore || 0) : 0
+
+  const articlesScore = isProgramming
+    ? (progress.articlesCompleted ? 20 : 0)
+    : (progress.articlesCompleted ? 25 : 0)
 
   const overallScore =
     notesScore + videosScore + assessmentScore + codingScore + articlesScore
@@ -237,20 +284,49 @@ function CourseView() {
 
   return (
     <div className="container mt-5 text-white">
-      <button
-        className="btn btn-secondary mb-4"
+      <div
         onClick={() => navigate(-1)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          cursor: "pointer",
+          marginBottom: "20px",
+          color: "rgba(255,255,255,0.7)",
+          fontSize: "0.95rem",
+          transition: "0.3s"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#ffffff"
+          e.currentTarget.style.transform = "translateX(-3px)"
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "rgba(255,255,255,0.7)"
+          e.currentTarget.style.transform = "translateX(0)"
+        }}
       >
-        ← Back
-      </button>
+        <span style={{ fontSize: "1.2rem" }}>←</span>
+        <span>Back</span>
+      </div>
 
-      <h2 className="text-center mb-4 fw-bold">📘 {course.title}</h2>
+      <div className="text-center mb-4">
+        <h2 className="fw-bold mb-2">{course.title}</h2>
+        <p style={{ color: "rgba(255,255,255,0.65)" }}>
+          Personalized AI-generated course content
+        </p>
+      </div>
 
       <div className="d-flex flex-wrap gap-3 justify-content-center mb-4">
         <span style={tabStyle("notes")} onClick={() => setActiveTab("notes")}>Notes</span>
         <span style={tabStyle("videos")} onClick={() => setActiveTab("videos")}>Videos</span>
         <span style={tabStyle("assessment")} onClick={() => setActiveTab("assessment")}>Assessment</span>
-        <span style={tabStyle("coding")} onClick={() => setActiveTab("coding")}>Coding</span>
+
+        {isProgramming && (
+          <span style={tabStyle("coding")} onClick={() => setActiveTab("coding")}>
+            Coding
+          </span>
+        )}
+
         <span style={tabStyle("articles")} onClick={() => setActiveTab("articles")}>Articles</span>
         <span style={tabStyle("dashboard")} onClick={() => setActiveTab("dashboard")}>Dashboard</span>
       </div>
@@ -301,13 +377,17 @@ function CourseView() {
               >
                 <h5 className="mb-3 text-danger">{video.title}</h5>
 
-                <iframe
-                  width="100%"
-                  height="350"
-                  src={`https://www.youtube.com/embed/${video.videoId}`}
-                  title={`Video ${index + 1}`}
-                  allowFullScreen
-                ></iframe>
+                {video.videoId ? (
+                  <iframe
+                    width="100%"
+                    height="350"
+                    src={`https://www.youtube.com/embed/${video.videoId}`}
+                    title={`Video ${index + 1}`}
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <div className="mb-3">Video preview unavailable</div>
+                )}
 
                 <a
                   href={video.url}
@@ -394,7 +474,7 @@ function CourseView() {
         </div>
       )}
 
-      {activeTab === "coding" && (
+      {isProgramming && activeTab === "coding" && (
         <div className="card bg-dark text-white p-4 shadow" style={{ borderRadius: "16px" }}>
           <h4 className="text-danger mb-3">Programming Assignment</h4>
 
@@ -519,7 +599,7 @@ function CourseView() {
                 <p>{progress.notesCompleted ? "✅" : "⬜"} Notes</p>
                 <p>{progress.videosCompleted ? "✅" : "⬜"} Videos</p>
                 <p>{progress.assessmentCompleted ? "✅" : "⬜"} Assessment</p>
-                <p>{progress.codingCompleted ? "✅" : "⬜"} Coding</p>
+                {isProgramming && <p>{progress.codingCompleted ? "✅" : "⬜"} Coding</p>}
                 <p>{progress.articlesCompleted ? "✅" : "⬜"} Articles</p>
               </div>
             </div>
@@ -528,11 +608,24 @@ function CourseView() {
           <div className="col-md-6">
             <div className="card bg-dark text-white p-4 shadow" style={{ borderRadius: "16px" }}>
               <h5 className="text-danger mb-3">Performance Summary</h5>
-              <p>Notes Score: {notesScore} / 20</p>
-              <p>Videos Score: {videosScore} / 20</p>
-              <p>Assessment Score: {assessmentScore} / 20</p>
-              <p>Coding Score: {codingScore} / 20</p>
-              <p>Articles Score: {articlesScore} / 20</p>
+
+              {isProgramming ? (
+                <>
+                  <p>Notes Score: {notesScore} / 20</p>
+                  <p>Videos Score: {videosScore} / 20</p>
+                  <p>Assessment Score: {assessmentScore} / 20</p>
+                  <p>Coding Score: {codingScore} / 20</p>
+                  <p>Articles Score: {articlesScore} / 20</p>
+                </>
+              ) : (
+                <>
+                  <p>Notes Score: {notesScore} / 25</p>
+                  <p>Videos Score: {videosScore} / 25</p>
+                  <p>Assessment Score: {assessmentScore} / 25</p>
+                  <p>Articles Score: {articlesScore} / 25</p>
+                </>
+              )}
+
               <p><strong>Overall Score: {overallScore} / 100</strong></p>
               <p className="mb-0"><strong>Grade: {getGrade(overallScore)}</strong></p>
             </div>
