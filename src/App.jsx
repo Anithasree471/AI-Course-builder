@@ -7,6 +7,7 @@ import ForgotPassword from "./pages/ForgotPassword"
 import Dashboard from "./pages/Dashboard"
 import CourseView from "./pages/CourseView"
 import Profile from "./pages/Profile"
+import AdminDashboard from "./pages/AdminDashboard"
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/course/:id" element={<CourseView />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Routes>
       </Layout>
     </BrowserRouter>

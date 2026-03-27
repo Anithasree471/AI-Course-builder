@@ -24,6 +24,8 @@ function Layout({ children }) {
   localStorage.removeItem("isLoggedIn")
   localStorage.removeItem("currentUser")
   localStorage.removeItem("user_id")
+  localStorage.removeItem("role") // ✅ ADD THIS LINE
+
   setIsLoggedIn(false)
   setCurrentUser(null)
   navigate("/")

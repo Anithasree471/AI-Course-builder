@@ -21,7 +21,7 @@ function Profile() {
     try {
       setLoading(true)
 
-      const res = await fetch(`https://ai-course-builder-backend-new.onrender.com/courses/${userId}`)
+      const res = await fetch(`http://127.0.0.1:5000/courses/${userId}`)
       const data = await res.json()
 
       if (!res.ok) {
@@ -40,7 +40,7 @@ function Profile() {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`https://ai-course-builder-backend-new.onrender.com/course/${id}`, {
+      const res = await fetch(`http://127.0.0.1:5000/${id}`, {
         method: "DELETE"
       })
 

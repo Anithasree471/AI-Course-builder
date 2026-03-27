@@ -6,11 +6,11 @@ function Login() {
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
 
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
   e.preventDefault()
 
   try {
-    const res = await fetch("https://ai-course-builder-backend-new.onrender.com/login", {
+    const res = await fetch("http://127.0.0.1:5000/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -28,17 +28,25 @@ function Login() {
       return
     }
 
+    // ✅ STORE ROLE ALSO
     localStorage.setItem("isLoggedIn", "true")
     localStorage.setItem("currentUser", data.user.email)
     localStorage.setItem("user_id", data.user.id)
+    localStorage.setItem("role", data.user.role)
 
     console.log("Login successful")
-    console.log("currentUser:", localStorage.getItem("currentUser"))
-    console.log("isLoggedIn:", localStorage.getItem("isLoggedIn"))
-    console.log("user_id:", localStorage.getItem("user_id"))
+    console.log("currentUser:", data.user.email)
+    console.log("role:", data.user.role)
 
     alert("Login Successful!")
-    navigate("/")
+
+    // ✅ ADMIN REDIRECT
+    if (data.user.role === "admin") {
+      navigate("/admin-dashboard")
+    } else {
+      navigate("/")
+    }
+
   } catch (error) {
     console.error("LOGIN ERROR:", error)
     alert("Server error")

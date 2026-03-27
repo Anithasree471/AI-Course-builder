@@ -11,7 +11,7 @@ function Register() {
     e.preventDefault()
 
     try {
-      const res = await fetch("https://ai-course-builder-backend-new.onrender.com/register", {
+      const res = await fetch("http://127.0.0.1:5000/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -76,10 +76,17 @@ function Register() {
           </button>
         </form>
 
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 mb-1">
           Already have an account?{" "}
-          <Link to="/login" className="text-danger">
-            Login
+          <Link to="/login" className="text-danger text-decoration-none">
+          Login
+          </Link>
+        </p>
+
+        <p className="text-center mb-0">
+          <span className="text-light">Admin? </span>
+          <Link to="/login" className="text-danger text-decoration-none fw-bold">
+          Login here
           </Link>
         </p>
       </div>
