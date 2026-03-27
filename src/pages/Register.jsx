@@ -11,7 +11,7 @@ function Register() {
     e.preventDefault()
 
     try {
-      const res = await fetch("https://ai-course-builder-backend-new.onrender.com/register", {
+      const res = await fetch("http://127.0.0.1:5000/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
